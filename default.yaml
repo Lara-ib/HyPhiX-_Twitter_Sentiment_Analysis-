@@ -1,0 +1,111 @@
+# =====================================================================
+# HyPhiX - default experimental configuration
+# Every value below reproduces the original training notebooks unless a
+# comment says otherwise. Command-line options of the scripts override it.
+# =====================================================================
+
+data:
+  train_file: data/twitter_training.csv
+  eval_file: data/twitter_validation.csv
+  # The original notebooks read both CSV files with pandas' default header
+  # handling, so the first tweet of each file became the header row
+  # (74,682 -> 74,681 training records, 1,000 -> 999 evaluation tweets).
+  # Keep true to reproduce the manuscript counts exactly.
+  legacy_header: true
+  # Keep negation words (not, no, never, ...) during stopword removal.
+  # false = original pipeline (negations are removed).
+  keep_negations: false
+
+split:
+  # "stratified": the original 80/10/10 stratified random split (seed 2018).
+  # "group": leakage-aware split that keeps all paraphrases of one tweet_id
+  #          in the same partition (recommended for the limitations analysis).
+  strategy: stratified
+  seed: 2018
+  test_size: 0.2        # first split: 80 % train, 20 % temporary
+  val_fraction: 0.5     # second split: temporary -> 10 % validation, 10 % test
+
+labels:
+  # Alphabetical order, identical to sklearn's OrdinalEncoder in the notebooks.
+  names: [Irrelevant, Negative, Neutral, Positive]
+
+bert:
+  pretrained: bert-base-uncased
+  max_len: 36            # CB and BB notebooks used max_length = 36
+  freeze_encoder: false  # BERT is fine-tuned together with the head
+
+train:
+  batch_size: 32
+  epochs: 5
+  lr: 2.0e-5
+  optimizer: adamw       # transformers.AdamW in the notebooks
+  adam_eps: 1.0e-6       # default eps of transformers.AdamW
+  weight_decay: 0.0      # default of transformers.AdamW (no L2 penalty)
+  grad_clip: 1.0
+  select_best_by: val_accuracy
+  seed: 2018             # model initialisation / shuffling seed
+  num_workers: 2
+
+cb:                      # BERT-CNN head (BERT_CNN.ipynb)
+  conv_channels: 13
+  kernel_height: 3
+  pool_height: 3
+  head_dropout: 0.0      # nn.Dropout(0.1) is defined in the notebook but never applied
+
+bb:                      # BERT-BiLSTM head (BERT_BILSTM.ipynb)
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.1           # applied to the BERT token embeddings
+  pooling: last          # "last" = lstm_out[:, -1, :] as in the notebook; "mean" = masked mean
+
+smote:
+  k_neighbors: 5
+  # Stage B: the fine-tuned encoder is frozen, the token-level embeddings of
+  # the training partition are rebalanced with SMOTE and the head is trained
+  # further on the balanced feature space.
+  head_epochs: 5
+  head_lr: 2.0e-4
+  batch_size: 64
+  feature_dtype: float16 # memory-mapped features on disk
+
+hyphix:                  # complete three-stream model (not in the original notebooks)
+  fusion: gate           # gate | concat | equal
+  use_psycho: true
+  fusion_dim: 256
+  psycho_categories: [self_reference, negative_affect]
+
+baselines:
+  cnn:
+    max_words: 10000
+    embedding_dim: 20
+    dropout: 0.075
+    epochs: 50
+    batch_size: 100
+    lr: 1.0e-3
+  bilstm:
+    seq_len: 100
+    embedding_dim: 128
+    hidden_size: 128
+    dropout: 0.5
+    l2: 0.01
+    epochs: 15
+    batch_size: 32
+    lr: 3.0e-5
+  bert:
+    max_len: 128
+    epochs: 10
+    lr: 3.0e-5
+    adam_eps: 1.0e-8
+    batch_size: 32
+
+evaluation:
+  bootstrap_resamples: 10000
+  ci_level: 0.95
+
+shap:
+  n_samples: 500         # number of evaluation tweets explained
+  max_evals: 300         # model evaluations per tweet (Partition explainer)
+  batch_size: 64
+  top_k: 20
+  min_count: 5           # minimum occurrences of a token for the global ranking
+  n_instance_plots: 12
