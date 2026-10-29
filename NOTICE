@@ -1,0 +1,14 @@
+HyPhiX - Hybrid BERT models for four-class Twitter sentiment analysis
+
+This product includes software derived from "Twitter-Sentiment-Analysis"
+(https://github.com/avulaankith/Twitter-Sentiment-Analysis) by Ankith Reddy Avula,
+Prem Kumar Rohan and Manogna Shashidhara, licensed under the Apache License 2.0.
+
+Modifications: the notebooks were re-implemented as a single PyTorch package; the LSTM and
+BERT-LSTM models were removed; sequence-aware SMOTE, confusion matrices, confidence intervals,
+significance tests, multi-seed experiments, SHAP explanations, the complete HyPhiX gated-fusion
+model with its ablations and a train/evaluation overlap analysis were added.
+
+The dataset files in data/ come from the Kaggle dataset "Twitter Entity Sentiment Analysis"
+(https://www.kaggle.com/datasets/jp797498e/twitter-entity-sentiment-analysis).
+The opinion lexicon is that of Hu and Liu (2004), distributed with NLTK.

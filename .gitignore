@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+runs/
+reports/
+tests/tiny_bert/
+.venv/
+*.npy
